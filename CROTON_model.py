@@ -59,8 +59,11 @@ class CROTON:
 		# Neural Net Model:
 			#define model:
 		model = Sequential()
-		model.add(layers.Conv2D(architecture['num_filters'], 
+		model.add(layers.Conv1D(architecture['num_filters'], 
                              architecture['kernel_size'], 
+                             activation=architecture['activation'], 
+                             input_dim=input_size)) 
+		model.add(layers.LSTM(architecture['num_filters'], 
                              activation=architecture['activation'], 
                              input_dim=input_size)) 
 		if architecture['pooling'] == 'max':
@@ -93,6 +96,30 @@ class CROTON:
 		#train the network model:
 		return self.model.fit(np.array(xtrain), np.array(ytrain), batch_size = self.batch_size,  epochs = 5)
 
+	def DNA_Language_Model(self, dataset):
+
+		DNA_ALPHABET = 'ACGT'
+
+		# Define model parameters
+		vocab_size = len(DNA_ALPHABET)
+
+		# Build RNN model
+		model = tf.keras.Sequential([
+			tf.keras.layers.Embedding(vocab_size, 16),
+			tf.keras.layers.LSTM(64, return_sequences=True),
+			tf.keras.layers.Dense(vocab_size)
+		])
+
+		# Compile the model
+		model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True))
+
+		# Train the model
+		batch_size = 64
+		epochs = 10
+		model.fit(dataset.batch(batch_size), epochs=epochs)
+
+		return model
+		
 #To load in data from a given file_path:
 def read_file_and_separate(file_path):
 	array = []
@@ -127,7 +154,6 @@ def run_croton():
 	
 	xtest = input_array[train_split:size_dataset+1, ]
 	ytest = output_array[train_split:size_dataset+1, ]
-		#more preprocess to come...
 	
 	#initialize croton model with random architecture:
 	croton = CROTON(input_array, output_array)
